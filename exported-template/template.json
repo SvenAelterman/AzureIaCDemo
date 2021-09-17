@@ -1,0 +1,159 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "extensions_IaaSAntimalware_Paths": {
+            "type": "SecureString"
+        },
+        "extensions_IaaSAntimalware_Extensions": {
+            "type": "SecureString"
+        },
+        "extensions_IaaSAntimalware_Processes": {
+            "type": "SecureString"
+        },
+        "virtualMachines_dc01_name": {
+            "defaultValue": "dc01",
+            "type": "String"
+        },
+        "networkInterfaces_dc01836_name": {
+            "defaultValue": "dc01836",
+            "type": "String"
+        },
+        "availabilitySets_AVSET_AELTERMAN_INFO_CORE_EASTUS_DC_externalid": {
+            "defaultValue": "/subscriptions/e781198c-6f6d-4994-b688-6e8e34c63c79/resourceGroups/rg-aelterman-info-ad/providers/Microsoft.Compute/availabilitySets/AVSET-AELTERMAN-INFO-CORE-EASTUS-DC",
+            "type": "String"
+        },
+        "virtualNetworks_vnet_aelterman_info_core_eastus_externalid": {
+            "defaultValue": "/subscriptions/e781198c-6f6d-4994-b688-6e8e34c63c79/resourceGroups/rg-aelterman-info-core/providers/Microsoft.Network/virtualNetworks/vnet-aelterman-info-core-eastus",
+            "type": "String"
+        }
+    },
+    "variables": {},
+    "resources": [
+        {
+            "type": "Microsoft.Network/networkInterfaces",
+            "apiVersion": "2020-11-01",
+            "name": "[parameters('networkInterfaces_dc01836_name')]",
+            "location": "eastus",
+            "tags": {
+                "date-created": "2021-04-02",
+                "lifetime": "long",
+                "purpose": "Hybrid Scenario Testing"
+            },
+            "properties": {
+                "ipConfigurations": [
+                    {
+                        "name": "ipconfig1",
+                        "properties": {
+                            "privateIPAddress": "10.0.0.4",
+                            "privateIPAllocationMethod": "Static",
+                            "subnet": {
+                                "id": "[concat(parameters('virtualNetworks_vnet_aelterman_info_core_eastus_externalid'), '/subnets/Subnet-DC')]"
+                            },
+                            "primary": true,
+                            "privateIPAddressVersion": "IPv4"
+                        }
+                    }
+                ],
+                "dnsSettings": {
+                    "dnsServers": []
+                },
+                "enableAcceleratedNetworking": false,
+                "enableIPForwarding": false
+            }
+        },
+        {
+            "type": "Microsoft.Compute/virtualMachines",
+            "apiVersion": "2021-03-01",
+            "name": "[parameters('virtualMachines_dc01_name')]",
+            "location": "eastus",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/networkInterfaces', parameters('networkInterfaces_dc01836_name'))]"
+            ],
+            "tags": {
+                "date-created": "2021-04-02",
+                "lifetime": "long",
+                "purpose": "Hybrid Scenario Testing"
+            },
+            "properties": {
+                "availabilitySet": {
+                    "id": "[parameters('availabilitySets_AVSET_AELTERMAN_INFO_CORE_EASTUS_DC_externalid')]"
+                },
+                "hardwareProfile": {
+                    "vmSize": "Standard_B2s"
+                },
+                "storageProfile": {
+                    "osDisk": {
+                        "osType": "Windows",
+                        "name": "[concat('disk-aelterman-info-core-eastus-', parameters('virtualMachines_dc01_name'), '_OsDisk_1')]",
+                        "createOption": "Attach",
+                        "caching": "ReadWrite",
+                        "managedDisk": {
+                            "storageAccountType": "StandardSSD_LRS",
+                            "id": "[resourceId('Microsoft.Compute/disks', concat('disk-aelterman-info-core-eastus-', parameters('virtualMachines_dc01_name'), '_OsDisk_1'))]"
+                        },
+                        "diskSizeGB": 127
+                    },
+                    "dataDisks": [
+                        {
+                            "lun": 0,
+                            "name": "[concat('disk-aelterman-info-core-eastus-', parameters('virtualMachines_dc01_name'), '_DataDisk_0')]",
+                            "createOption": "Attach",
+                            "caching": "None",
+                            "writeAcceleratorEnabled": false,
+                            "managedDisk": {
+                                "storageAccountType": "StandardSSD_LRS",
+                                "id": "[resourceId('Microsoft.Compute/disks', concat('disk-aelterman-info-core-eastus-', parameters('virtualMachines_dc01_name'), '_DataDisk_0'))]"
+                            },
+                            "diskSizeGB": 128,
+                            "toBeDetached": false
+                        }
+                    ]
+                },
+                "networkProfile": {
+                    "networkInterfaces": [
+                        {
+                            "id": "[resourceId('Microsoft.Network/networkInterfaces', parameters('networkInterfaces_dc01836_name'))]"
+                        }
+                    ]
+                },
+                "diagnosticsProfile": {
+                    "bootDiagnostics": {
+                        "enabled": true
+                    }
+                },
+                "licenseType": "Windows_Server"
+            }
+        },
+        {
+            "type": "Microsoft.Compute/virtualMachines/extensions",
+            "apiVersion": "2021-03-01",
+            "name": "[concat(parameters('virtualMachines_dc01_name'), '/IaaSAntimalware')]",
+            "location": "eastus",
+            "dependsOn": [
+                "[resourceId('Microsoft.Compute/virtualMachines', parameters('virtualMachines_dc01_name'))]"
+            ],
+            "properties": {
+                "autoUpgradeMinorVersion": true,
+                "publisher": "Microsoft.Azure.Security",
+                "type": "IaaSAntimalware",
+                "typeHandlerVersion": "1.1",
+                "settings": {
+                    "AntimalwareEnabled": "true",
+                    "Exclusions": {
+                        "Paths": "[parameters('extensions_IaaSAntimalware_Paths')]",
+                        "Extensions": "[parameters('extensions_IaaSAntimalware_Extensions')]",
+                        "Processes": "[parameters('extensions_IaaSAntimalware_Processes')]"
+                    },
+                    "RealtimeProtectionEnabled": "true",
+                    "ScheduledScanSettings": {
+                        "isEnabled": "false",
+                        "scanType": "Quick",
+                        "day": "7",
+                        "time": "120"
+                    }
+                }
+            }
+        }
+    ]
+}

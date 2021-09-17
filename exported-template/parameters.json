@@ -1,0 +1,27 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "extensions_IaaSAntimalware_Paths": {
+            "value": null
+        },
+        "extensions_IaaSAntimalware_Extensions": {
+            "value": null
+        },
+        "extensions_IaaSAntimalware_Processes": {
+            "value": null
+        },
+        "virtualMachines_dc01_name": {
+            "value": null
+        },
+        "networkInterfaces_dc01836_name": {
+            "value": null
+        },
+        "availabilitySets_AVSET_AELTERMAN_INFO_CORE_EASTUS_DC_externalid": {
+            "value": null
+        },
+        "virtualNetworks_vnet_aelterman_info_core_eastus_externalid": {
+            "value": null
+        }
+    }
+}
